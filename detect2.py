@@ -11,6 +11,11 @@ import sys
 import time
 from pathlib import Path
 
+from gpiozero import LED
+import time
+
+led = LED(18)
+
 import cv2
 import numpy as np
 import torch
@@ -25,6 +30,7 @@ from utils.general import check_img_size, check_requirements, check_imshow, colo
     apply_classifier, scale_coords, xyxy2xywh, strip_optimizer, set_logging, increment_path, save_one_box
 from utils.plots import colors, plot_one_box
 from utils.torch_utils import select_device, load_classifier, time_sync
+
 
 
 @torch.no_grad()
@@ -138,6 +144,7 @@ def run(weights='yolov5s.pt',  # model.pt path(s)
             pred = model(img, augment=augment, visualize=visualize)[0]
         elif onnx:
             pred = torch.tensor(session.run([session.get_outputs()[0].name], {session.get_inputs()[0].name: img}))
+            
         else:  # tensorflow model (tflite, pb, saved_model)
             imn = img.permute(0, 2, 3, 1).cpu().numpy()  # image in numpy
             if pb:
@@ -170,6 +177,8 @@ def run(weights='yolov5s.pt',  # model.pt path(s)
 
         # Process predictions
         for i, det in enumerate(pred):  # detections per image
+            
+            
             if webcam:  # batch_size >= 1
                 p, s, im0, frame = path[i], f'{i}: ', im0s[i].copy(), dataset.count
             else:
@@ -189,6 +198,7 @@ def run(weights='yolov5s.pt',  # model.pt path(s)
                 for c in det[:, -1].unique():
                     n = (det[:, -1] == c).sum()  # detections per class
                     s += f"{n} {names[int(c)]}{'s' * (n > 1)}, "  # add to string
+                    led.toggle()
 
                 # Write results
                 for *xyxy, conf, cls in reversed(det):
@@ -279,6 +289,15 @@ def parse_opt():
     opt = parser.parse_args()
     opt.imgsz *= 2 if len(opt.imgsz) == 1 else 1  # expand
     return opt
+    
+    from threading import Thread
+    import time
+    import importlib.util
+    from gpiozero import LED
+    import datetime
+    import ffmpeg
+    
+    
 
 
 def main(opt):
